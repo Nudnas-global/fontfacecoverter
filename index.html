@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sinhala Unicode to Tharu Digital Mahee Converter</title>
+  <style>
+    @font-face {
+      font-family: 'TharuDigitalMahee';
+      src: url('tharu_digital_mahee.ttf') format('truetype');
+      font-display: swap;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f5f5;
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    h2, h3 {
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      font-size: 18px;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    button {
+      background: #4169e1;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #3050c0;
+    }
+
+    #output {
+      font-family: 'TharuDigitalMahee', sans-serif;
+      font-size: 24px;
+      padding: 1rem;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-height: 150px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .font-warning {
+      background: #fff3cd;
+      padding: 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Sinhala Unicode to Tharu Digital Mahee Converter</h2>
+  
+  <div class="font-warning" id="fontWarning">
+    Note: For proper display, make sure the Tharu Digital Mahee font is installed on your system.
+  </div>
+  
+  <textarea id="unicodeInput" placeholder="Type or paste Sinhala Unicode text here..."></textarea>
+  
+  <div class="controls">
+    <button onclick="convertToTharu()">Convert</button>
+    <button onclick="copyOutput()">Copy Output</button>
+    <button onclick="clearAll()">Clear All</button>
+  </div>
+
+  <h3>Tharu Digital Output:</h3>
+  <div id="output"></div>
+</div>
+
+<script>
+// Exact mapping from original code
+const mapping = {
+  "කා":"ld", "කැ":"le", "කෑ":"lE", "කි":"ls", "කී":"lS", "කු":"l=", "කූ":"l+", "කෙ":"fl", "කේ":"fla", "කො":"fld", "කෝ":"flda", "ක":"l",
+  "ගා":".d", "ගැ":".e", "ගෑ":".E", "ගි":".s", "ගී":".S", "ගු":".=", "ගූ":".+", "ගෙ":"f.", "ගේ":"f.a", "ගො":"f.d", "ගෝ":"f.da", "ග":".",
+  "චා":"pd", "චැ":"pe", "චෑ":"pE", "චි":"ps", "චී":"pS", "චු":"pq", "චූ":"pQ", "චෙ":"fp", "චේ":"fpa", "චො":"fpd", "චෝ":"fpda", "ච":"p",
+  "ජා":"Pd", "ජැ":"Pe", "ජෑ":"PE", "ජි":"Ps", "ජී":"PS", "ජු":"Pq", "ජූ":"PQ", "ජෙ":"fP", "ජේ":"fPa", "ජො":"fPd", "ජෝ":"fPda", "ජ":"P",
+  "ටා":"gd", "ටැ":"ge", "ටෑ":"gE", "ටි":"gs", "ටී":"gS", "ටු":"gq", "ටූ":"gQ", "ටෙ":"fg", "ටේ":"fga", "ටො":"fgd", "ටෝ":"fgda", "ට":"g",
+  "ඩා":"vd", "ඩැ":"ve", "ඩෑ":"vE", "ඩි":"vs", "ඩී":"vS", "ඩු":"vq", "ඩූ":"vQ", "ඩෙ":"fv", "ඩේ":"fva", "ඩො":"fvd", "ඩෝ":"fvda", "ඩ":"v",
+  "තා":";d", "තැ":";e", "තෑ":";E", "ති":";s", "තී":";S", "තු":";=", "තූ":";+","තෙ":"f;", "තේ":"f;a", "තො":"f;d", "තෝ":"f;da", "ත":";", "ත්":";a",
+  "දා":"od", "දැ":"oe", "දෑ":"oE", "දි":"os", "දී":"oS", "දු":"oq", "දූ":"oQ", "දෙ":"fo", "දේ":"foa", "දො":"fod", "දෝ":"foda", "ද":"o", "ද්":"oa",
+  "නා":"kd", "නැ":"ke", "නෑ":"kE", "නි":"ks", "නී":"kS", "නු":"kq", "නූ":"kQ", "නෙ":"fk", "නේ":"fka", "නො":"fkd", "නෝ":"fkda", "න":"k", "න්":"ka",
+  "පා":"md", "පැ":"me", "පෑ":"mE", "පි":"ms", "පී":"mS", "පු":"mq", "පූ":"mQ", "පෙ":"fm", "පේ":"fma", "පො":"fmd", "පෝ":"fmda", "ප":"m",
+  "බා":"nd", "බැ":"ne", "බෑ":"nE", "බි":"ns", "බී":"nS", "බු":"nq", "බූ":"nQ", "බෙ":"fn", "බේ":"fna", "බො":"fnd", "බෝ":"fnda", "බ":"n",
+  "මා":"ud", "මැ":"ue", "මෑ":"uE", "මි":"us", "මී":"uS", "මු":"uq", "මූ":"uQ", "මෙ":"fu", "මේ":"fua", "මො":"fud", "මෝ":"fuda", "ම":"u",
+  "යා":"hd", "යැ":"he", "යෑ":"hE", "යි":"hs", "යී":"hS", "යු":"hq", "යූ":"hQ", "යෙ":"fh", "යේ":"fha", "යො":"fhd", "යෝ":"fhda", "ය":"h",
+  "රා":"rd", "රැ":"/", "රෑ":"?", "රි":"rs", "රී":"rS", "රු":"re", "රූ":"r+", "රෙ":"fr", "රේ":"fra", "රො":"frd", "රෝ":"frda", "ර":"r",
+  "ලා":",d", "ලැ":",e", "ලෑ":",E", "ලි":",s", "ලී":",S", "ලු":",q", "ලූ":",Q", "ලෙ":"f,", "ලේ":"f,a", "ලො":"f,d", "ලෝ":"f,da", "ල":",",
+  "වා":"jd", "වැ":"je", "වෑ":"jE", "වි":"js", "වී":"jS", "වු":"jq", "වූ":"jQ", "වෙ":"fj", "වේ":"fja", "වො":"fjd", "වෝ":"fjda", "ව":"j",
+  "සා":"id", "සැ":"ie", "සෑ":"iE", "සි":"is", "සී":"iS", "සු":"iq", "සූ":"iQ", "සෙ":"fi", "සේ":"fia", "සො":"fid", "සෝ":"fida", "ස":"i",
+  "හා":"yd", "හැ":"ye", "හෑ":"yE", "හි":"ys", "හී":"yS", "හු":"yq", "හූ":"yQ", "හෙ":"fy", "හේ":"fya", "හො":"fyd", "හෝ":"fyda", "හ":"y",
+  "අ":"w", "ආ":"wd", "ඇ":"we", "ඈ":"wE", "ඉ":"b", "ඊ":"B", "උ":"W", "ඌ":"W!",  "එ":"t", "ඒ":"ta", "ඔ":"T", "ඕ":"´", "ඖ":"T!",
+  "ඤ":"\`[", "ඥ":"~{", 
+
+  // Hard letters
+  "භ":"N", "ෆ":"*","ශ":"Y","ධ":"O","ඳ":"|","ණ":"K","ළ":"<","ථ":":","ෂ":"I",
+  
+  // Additional special characters and vowel modifiers
+  "්":"a", "ං":"x", "ඃ":"#",
+  "ෙ":"f", "ේ":"fa", "ෛ":"ff", "ො":"fd", "ෝ":"fda", "ෞ":"f!",
+  "ා":"d", "ැ":"e", "ෑ":"E", "ි":"s", "ී":"S", "ු":"=", "ූ":"+"
+};
+
+// Check if font is loaded
+function checkFontLoaded() {
+  const fontTest = document.createElement('span');
+  fontTest.style.fontFamily = 'TharuDigitalMahee, sans-serif';
+  fontTest.style.fontSize = '0';
+  fontTest.style.visibility = 'hidden';
+  fontTest.textContent = 'test';
+  document.body.appendChild(fontTest);
+  
+  setTimeout(() => {
+    const width = fontTest.offsetWidth;
+    if (width === 0) {
+      document.getElementById('fontWarning').style.display = 'block';
+    }
+    document.body.removeChild(fontTest);
+  }, 100);
+}
+
+function convertToTharu() {
+  let input = document.getElementById("unicodeInput").value.normalize("NFC");
+  if (!input) return;
+  
+  // Sort keys by length (longest first) to handle complex characters before simpler ones
+  const keys = Object.keys(mapping).sort((a, b) => b.length - a.length);
+  
+  // Replace characters one by one in order of longest to shortest
+  let result = input;
+  for (const key of keys) {
+    // Create a regex that matches the current key with proper unicode handling
+    const regex = new RegExp(key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+    result = result.replace(regex, mapping[key]);
+  }
+  
+  document.getElementById("output").textContent = result;
+}
+
+function copyOutput() {
+  const output = document.getElementById("output");
+  if (!output.textContent) return;
+  
+  // Create a textarea element to use for copying
+  const textarea = document.createElement('textarea');
+  textarea.value = output.textContent;
+  document.body.appendChild(textarea);
+  textarea.select();
+  
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      alert('Output copied to clipboard!');
+    } else {
+      alert('Failed to copy to clipboard');
+    }
+  } catch (err) {
+    console.error('Unable to copy', err);
+    alert('Unable to copy to clipboard');
+  }
+  
+  document.body.removeChild(textarea);
+}
+
+function clearAll() {
+  document.getElementById("unicodeInput").value = '';
+  document.getElementById("output").textContent = '';
+}
+
+// Check if the font is loaded when the page loads
+window.addEventListener('load', checkFontLoaded);
+</script>
+
+</body>
+</html>
